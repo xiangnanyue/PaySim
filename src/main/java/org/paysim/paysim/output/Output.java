@@ -23,10 +23,11 @@ public class Output {
             filenameStepAggregate, filenameClientProfiles, filenameFraudsters;
 
     public static void incrementalWriteRawLog(int step, ArrayList<Transaction> transactions) {
-        String rawLogHeader = "hour,action_type,transaction_amt,user_debit_id,"+
-                "oldBalanceOrig,newBalanceOrig,user_credit_id,oldBalanceDest,newBalanceDest,"+
-                "isFraud,isFlaggedFraud,isUnauthorizedOverdraft,city,country,ip,equip_id"+
-                "transaction_channel,trasaction_status,pay_time,debit_account_num,credit_account_num"+
+        String rawLogHeader = "action_type,transaction_amt,user_debit_id,"+
+                "oldBalanceOrig,user_credit_id,oldBalanceDest,"+
+                "isFraud,city,country,ip,equip_id,"+
+                "transaction_channel,trasaction_status,"+
+                "pay_time,debit_account_num,credit_account_num,"+
                 "transaction_type,user_debit_type,user_credit_type,user_debitcard_type,transaction_id";
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(filenameRawLog, true));

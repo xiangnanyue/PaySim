@@ -56,7 +56,7 @@ public class Transaction implements Serializable {
         // TODO: add to agent logic in the future
         this.transaction_channel = transactionChannels[new Random().nextInt(transactionChannels.length)];
         this.isFinished = new Random().nextBoolean();
-        this.pay_time = new Date(startDate.getTime()+step*3600+id*10);
+        this.pay_time = new Date(startDate.getTime()+step*3600000+id*1000);
         this.isInnerTransaction = isInnerTransaction;
         this.isOrgPublic = isOrgPublic;
         this.isDesPublic = isDesPublic;
@@ -131,18 +131,18 @@ public class Transaction implements Serializable {
     public String toString(){
         ArrayList<String> properties = new ArrayList<>();
 
-        properties.add(String.valueOf(step));
+        //properties.add(String.valueOf(step));
         properties.add(action);
         properties.add(Output.fastFormatDouble(Output.PRECISION_OUTPUT, amount));
         properties.add(nameOrig);
         properties.add(Output.fastFormatDouble(Output.PRECISION_OUTPUT, oldBalanceOrig));
-        properties.add(Output.fastFormatDouble(Output.PRECISION_OUTPUT, newBalanceOrig));
+        //properties.add(Output.fastFormatDouble(Output.PRECISION_OUTPUT, newBalanceOrig));
         properties.add(nameDest);
         properties.add(Output.fastFormatDouble(Output.PRECISION_OUTPUT, oldBalanceDest));
-        properties.add(Output.fastFormatDouble(Output.PRECISION_OUTPUT, newBalanceDest));
+        //properties.add(Output.fastFormatDouble(Output.PRECISION_OUTPUT, newBalanceDest));
         properties.add(Output.formatBoolean(isFraud));
-        properties.add(Output.formatBoolean(isFlaggedFraud));
-        properties.add(Output.formatBoolean(isUnauthorizedOverdraft));
+        //properties.add(Output.formatBoolean(isFlaggedFraud));
+        //properties.add(Output.formatBoolean(isUnauthorizedOverdraft));
         properties.add(city);
         properties.add(country);
         properties.add(ip);
