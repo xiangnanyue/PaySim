@@ -1,7 +1,6 @@
 package org.paysim.paysim.base;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import ec.util.MersenneTwisterFast;
@@ -9,13 +8,27 @@ import ec.util.MersenneTwisterFast;
 import org.paysim.paysim.parameters.ActionTypes;
 
 public class ClientProfile {
-    private Map<String, ClientActionProfile> profile;
+    public static final Map<String, String> city2Country;
+    static {
+        String[] cityCountryList = TimeZone.getAvailableIDs();
+        Map<String, String> tmp = new HashMap<>();
+        int i = 0;
+        for (String s: cityCountryList) {
+            String[] countryCity = s.split("/");
+            if (countryCity.length == 2) tmp.put(countryCity[1], countryCity[0]);
+            else continue;
+        }
+        city2Country = Collections.unmodifiableMap(tmp);
+    }
+    public static String[] cities = city2Country.keySet().toArray(new String[city2Country.size()]);
+
+    private Map<String, ClientActionProfile> actionProfileMap;
     private Map<String, Double> actionProbability = new HashMap<>();
     private final Map<String, Integer> targetCount = new HashMap<>();
     private int clientTargetCount;
 
-    public ClientProfile(Map<String, ClientActionProfile> profile, MersenneTwisterFast random) {
-        this.profile = profile;
+    public ClientProfile(Map<String, ClientActionProfile> actionProfile, MersenneTwisterFast random) {
+        this.actionProfileMap = actionProfile;
         this.clientTargetCount = 0;
         for (String action : ActionTypes.getActions()) {
             int targetCountAction = pickTargetCount(action, random);
@@ -25,8 +38,22 @@ public class ClientProfile {
         computeActionProbability();
     }
 
+    public static String[] generateIPs(int n) {
+        String[] ips = new String[n];
+        for(int i=0; i < n; i++){
+            String[] values = new String[4];
+            for(int j = 0; j<4; j++){
+                if (j == 0) values[j] = Integer.toString(new Random().nextInt(233)+1);
+                else values[j] = Integer.toString(new Random().nextInt(255));
+            }
+            String newIP = String.join(".", values);
+            ips[i] = newIP;
+        }
+        return ips;
+    }
+
     private int pickTargetCount(String action, MersenneTwisterFast random) {
-        ClientActionProfile actionProfile = profile.get(action);
+        ClientActionProfile actionProfile = actionProfileMap.get(action);
         int targetCountAction;
 
         int rangeSize = actionProfile.getMaxCount() - actionProfile.getMinCount();
@@ -63,6 +90,6 @@ public class ClientProfile {
     }
 
     public ClientActionProfile getProfilePerAction(String action) {
-        return profile.get(action);
+        return actionProfileMap.get(action);
     }
 }

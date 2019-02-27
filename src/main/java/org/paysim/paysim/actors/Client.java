@@ -1,8 +1,7 @@
 package org.paysim.paysim.actors;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
 import static java.lang.Math.max;
 
 import ec.util.MersenneTwisterFast;
@@ -29,6 +28,7 @@ public class Client extends SuperActor implements Steppable {
     private static final int MIN_NB_TRANSFER_FOR_FRAUD = 3;
     private static final String CASH_IN = "CASH_IN", CASH_OUT = "CASH_OUT", DEBIT = "DEBIT",
             PAYMENT = "PAYMENT", TRANSFER = "TRANSFER", DEPOSIT = "DEPOSIT";
+    private static final String[] CARD_TYPES = {"信用卡", "储蓄卡"};
     private final Bank bank;
     private ClientProfile clientProfile;
     private double clientWeight;
@@ -37,9 +37,16 @@ public class Client extends SuperActor implements Steppable {
     private double expectedAvgTransaction = 0;
     private double initialBalance;
 
+    protected String country;
+    protected String city;
+    protected String[] ips;
+    protected String equip_ip;
+
     Client(String name, Bank bank) {
         super(CLIENT_IDENTIFIER + name);
         this.bank = bank;
+        this.accounts.get(0).setBank(this.bank);
+        this.accounts.get(0).setCardType(CARD_TYPES[new Random().nextInt(CARD_TYPES.length)]);
     }
 
     public Client(PaySim paySim) {
@@ -50,6 +57,13 @@ public class Client extends SuperActor implements Steppable {
         this.initialBalance = BalancesClients.pickNextBalance(paySim.random);
         this.balance = initialBalance;
         this.overdraftLimit = pickOverdraftLimit(paySim.random);
+
+        this.city = ClientProfile.cities[new Random().nextInt(ClientProfile.cities.length)];
+        this.country = ClientProfile.city2Country.get(this.city);
+        this.ips = ClientProfile.generateIPs(5);  // generate 5 ips for use
+        this.equip_ip = UUID.randomUUID().toString();
+        this.accounts.get(0).setBank(this.bank);
+        this.accounts.get(0).setCardType(CARD_TYPES[new Random().nextInt(CARD_TYPES.length)]);
     }
 
     @Override
@@ -61,8 +75,11 @@ public class Client extends SuperActor implements Steppable {
             int step = (int) state.schedule.getSteps();
             Map<String, Double> stepActionProfile = paySim.getStepProbabilities();
 
+            // use binomial distribution to pick a count number
             int count = pickCount(random, stepTargetCount);
 
+            // in one step take count times actions, and randomly pick action type,
+            // amount, actionProfile
             for (int t = 0; t < count; t++) {
                 String action = pickAction(random, stepActionProfile);
                 StepActionProfile stepAmountProfile = paySim.getStepAction(action);
@@ -74,7 +91,7 @@ public class Client extends SuperActor implements Steppable {
     }
 
     private int pickCount(MersenneTwisterFast random, int targetStepCount) {
-        // B(n,p): n = targetStepCount & p = clientWeight
+        // B(n,p): n = targetStepCount & p = clientWeight, generate nextInt times to action
         Binomial transactionNb = new Binomial(targetStepCount, clientWeight, random);
         return transactionNb.nextInt();
     }
@@ -211,6 +228,7 @@ public class Client extends SuperActor implements Steppable {
         }
     }
 
+    // the client deposit cash in, without transfer or payment
     protected void handleCashIn(PaySim paysim, int step, double amount) {
         Merchant merchantTo = paysim.pickRandomMerchant();
         String nameOrig = this.getName();
@@ -223,11 +241,22 @@ public class Client extends SuperActor implements Steppable {
         double newBalanceOrig = this.getBalance();
         double newBalanceDest = merchantTo.getBalance();
 
+        String ip = this.ips[new Random().nextInt(this.ips.length)];
+
+        Account orgAccount = this.accounts.get(0);
+        Account desAccount = merchantTo.accounts.get(0);
+        boolean isInnerTransaction = (orgAccount.bankName == desAccount.bankName);
+
         Transaction t = new Transaction(step, CASH_IN, amount, nameOrig, oldBalanceOrig,
-                newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest);
+                newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest, this.city,
+                this.country, ip, this.equip_ip, isInnerTransaction,
+                orgAccount.isPublic, desAccount.isPublic,
+                orgAccount.accountNumber, desAccount.accountNumber, orgAccount.cardType);
+
         paysim.getTransactions().add(t);
     }
 
+    // means the client take cash out
     protected void handleCashOut(PaySim paysim, int step, double amount) {
         Merchant merchantTo = paysim.pickRandomMerchant();
         String nameOrig = this.getName();
@@ -240,8 +269,16 @@ public class Client extends SuperActor implements Steppable {
         double newBalanceOrig = this.getBalance();
         double newBalanceDest = merchantTo.getBalance();
 
+        String ip = this.ips[new Random().nextInt(this.ips.length)];
+        Account orgAccount = this.accounts.get(0);
+        Account desAccount = merchantTo.accounts.get(0);
+        boolean isInnerTransaction = (orgAccount.bankName == desAccount.bankName);
+
         Transaction t = new Transaction(step, CASH_OUT, amount, nameOrig, oldBalanceOrig,
-                newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest);
+                newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest, this.city,
+                this.country, ip, this.equip_ip, isInnerTransaction,
+                orgAccount.isPublic, desAccount.isPublic,
+                orgAccount.accountNumber, desAccount.accountNumber, orgAccount.cardType);
 
         t.setUnauthorizedOverdraft(isUnauthorizedOverdraft);
         t.setFraud(this.isFraud());
@@ -259,8 +296,16 @@ public class Client extends SuperActor implements Steppable {
         double newBalanceOrig = this.getBalance();
         double newBalanceDest = this.bank.getBalance();
 
+        String ip = this.ips[new Random().nextInt(this.ips.length)];
+        Account orgAccount = this.accounts.get(0);
+        Account desAccount = this.bank.accounts.get(0);
+        boolean isInnerTransaction = (orgAccount.bankName == desAccount.bankName);
+
         Transaction t = new Transaction(step, DEBIT, amount, nameOrig, oldBalanceOrig,
-                newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest);
+                newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest, this.city,
+                this.country, ip, this.equip_ip, isInnerTransaction,
+                orgAccount.isPublic, desAccount.isPublic,
+                orgAccount.accountNumber, desAccount.accountNumber, orgAccount.cardType);
 
         t.setUnauthorizedOverdraft(isUnauthorizedOverdraft);
         paysim.getTransactions().add(t);
@@ -282,8 +327,16 @@ public class Client extends SuperActor implements Steppable {
         double newBalanceOrig = this.getBalance();
         double newBalanceDest = merchantTo.getBalance();
 
+        String ip = this.ips[new Random().nextInt(this.ips.length)];
+        Account orgAccount = this.accounts.get(0);
+        Account desAccount = merchantTo.accounts.get(0);
+        boolean isInnerTransaction = (orgAccount.bankName == desAccount.bankName);
+
         Transaction t = new Transaction(step, PAYMENT, amount, nameOrig, oldBalanceOrig,
-                newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest);
+                newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest, this.city,
+                this.country, ip, this.equip_ip,isInnerTransaction,
+                orgAccount.isPublic, desAccount.isPublic,
+                orgAccount.accountNumber, desAccount.accountNumber, orgAccount.cardType);
 
         t.setUnauthorizedOverdraft(isUnauthorizedOverdraft);
         paysim.getTransactions().add(t);
@@ -294,6 +347,10 @@ public class Client extends SuperActor implements Steppable {
         String nameDest = clientTo.getName();
         double oldBalanceOrig = this.getBalance();
         double oldBalanceDest = clientTo.getBalance();
+        String ip = this.ips[new Random().nextInt(this.ips.length)];
+        Account orgAccount = this.accounts.get(0);
+        Account desAccount = clientTo.accounts.get(0);
+        boolean isInnerTransaction = (orgAccount.bankName == desAccount.bankName);
 
         boolean transferSuccessful;
         if (!isDetectedAsFraud(amount)) {
@@ -307,7 +364,10 @@ public class Client extends SuperActor implements Steppable {
             double newBalanceDest = clientTo.getBalance();
 
             Transaction t = new Transaction(step, TRANSFER, amount, nameOrig, oldBalanceOrig,
-                    newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest);
+                    newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest, this.city,
+                    this.country, ip, this.equip_ip, isInnerTransaction,
+                    orgAccount.isPublic, desAccount.isPublic,
+                    orgAccount.accountNumber, desAccount.accountNumber, orgAccount.cardType);
 
             t.setUnauthorizedOverdraft(isUnauthorizedOverdraft);
             t.setFraud(this.isFraud());
@@ -318,7 +378,10 @@ public class Client extends SuperActor implements Steppable {
             double newBalanceDest = clientTo.getBalance();
 
             Transaction t = new Transaction(step, TRANSFER, amount, nameOrig, oldBalanceOrig,
-                    newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest);
+                    newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest, this.city,
+                    this.country, ip, this.equip_ip, isInnerTransaction,
+                    orgAccount.isPublic, desAccount.isPublic,
+                    orgAccount.accountNumber, desAccount.accountNumber, orgAccount.cardType);
 
             t.setFlaggedFraud(true);
             t.setFraud(this.isFraud());
@@ -337,9 +400,16 @@ public class Client extends SuperActor implements Steppable {
 
         double newBalanceOrig = this.getBalance();
         double newBalanceDest = this.bank.getBalance();
+        String ip = this.ips[new Random().nextInt(this.ips.length)];
+        Account orgAccount = this.accounts.get(0);
+        Account desAccount = this.bank.accounts.get(0);
+        boolean isInnerTransaction = (orgAccount.bankName == desAccount.bankName);
 
         Transaction t = new Transaction(step, DEPOSIT, amount, nameOrig, oldBalanceOrig,
-                newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest);
+                newBalanceOrig, nameDest, oldBalanceDest, newBalanceDest, this.city,
+                this.country, ip, this.equip_ip, isInnerTransaction,
+                orgAccount.isPublic, desAccount.isPublic,
+                orgAccount.accountNumber, desAccount.accountNumber, orgAccount.cardType);
 
         paysim.getTransactions().add(t);
     }

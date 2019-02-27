@@ -5,5 +5,6 @@ public class Bank extends SuperActor {
 
     public Bank(String name) {
         super(BANK_IDENTIFIER + name);
+        this.accounts.get(0).setPublic(true);
     }
 }

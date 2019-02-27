@@ -5,5 +5,6 @@ public class Merchant extends SuperActor {
 
     public Merchant(String name) {
         super(MERCHANT_IDENTIFIER + name);
+        this.accounts.get(0).setPublic(true);
     }
 }

@@ -1,13 +1,17 @@
 package org.paysim.paysim.actors;
 
+import java.util.ArrayList;
+
 class SuperActor {
     private final String name;
     private boolean isFraud = false;
     double balance = 0;
     double overdraftLimit;
+    ArrayList<Account> accounts = new ArrayList();
 
     SuperActor(String name) {
         this.name = name;
+        this.accounts.add(new Account());
     }
 
     void deposit(double amount) {
@@ -47,3 +51,4 @@ class SuperActor {
         return name;
     }
 }
+
