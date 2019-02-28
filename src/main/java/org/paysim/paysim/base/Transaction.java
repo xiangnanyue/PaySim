@@ -40,6 +40,8 @@ public class Transaction implements Serializable {
                        boolean isInnerTransaction, boolean isOrgPublic,
                        boolean isDesPublic, String orgAccountNum,
                        String desAccountNum, String orgCardType) {
+        id = serialVersionUID++;
+
         this.step = step;
         this.action = action;
         this.amount = amount;
@@ -56,75 +58,13 @@ public class Transaction implements Serializable {
         // TODO: add to agent logic in the future
         this.transaction_channel = transactionChannels[new Random().nextInt(transactionChannels.length)];
         this.isFinished = new Random().nextBoolean();
-        this.pay_time = new Date(startDate.getTime()+step*3600000+id*1000);
+        this.pay_time = new Date(startDate.getTime()+step*3600000L+id*1000L);
         this.isInnerTransaction = isInnerTransaction;
         this.isOrgPublic = isOrgPublic;
         this.isDesPublic = isDesPublic;
         this.orgAccountNum = orgAccountNum;
         this.desAccountNum = desAccountNum;
         this.orgCardType = orgCardType;
-
-        id = serialVersionUID++;
-    }
-
-    public boolean isFailedTransaction(){
-        return isFlaggedFraud || isUnauthorizedOverdraft;
-    }
-
-    public void setFlaggedFraud(boolean isFlaggedFraud) {
-        this.isFlaggedFraud = isFlaggedFraud;
-    }
-
-    public void setFraud(boolean isFraud) {
-        this.isFraud = isFraud;
-    }
-
-    public void setUnauthorizedOverdraft(boolean isUnauthorizedOverdraft) {
-        this.isUnauthorizedOverdraft = isUnauthorizedOverdraft;
-    }
-
-    public boolean isFlaggedFraud() {
-        return isFlaggedFraud;
-    }
-
-    public boolean isFraud() {
-        return isFraud;
-    }
-
-    public int getStep() {
-        return step;
-    }
-
-    public String getAction() {
-        return action;
-    }
-
-    public double getAmount() {
-        return amount;
-    }
-
-    public String getNameOrig() {
-        return nameOrig;
-    }
-
-    public double getOldBalanceOrig() {
-        return oldBalanceOrig;
-    }
-
-    public double getNewBalanceOrig() {
-        return newBalanceOrig;
-    }
-
-    public String getNameDest() {
-        return nameDest;
-    }
-
-    public double getOldBalanceDest() {
-        return oldBalanceDest;
-    }
-
-    public double getNewBalanceDest() {
-        return newBalanceDest;
     }
 
     @Override
@@ -161,5 +101,65 @@ public class Transaction implements Serializable {
         properties.add(String.valueOf(id));
 
         return String.join(Output.OUTPUT_SEPARATOR, properties);
+    }
+
+    public boolean isFlaggedFraud() {
+        return isFlaggedFraud;
+    }
+
+    public boolean isFraud() {
+        return isFraud;
+    }
+
+    public boolean isFailedTransaction(){
+        return isFlaggedFraud || isUnauthorizedOverdraft;
+    }
+
+    public void setFlaggedFraud(boolean isFlaggedFraud) {
+        this.isFlaggedFraud = isFlaggedFraud;
+    }
+
+    public void setFraud(boolean isFraud) {
+        this.isFraud = isFraud;
+    }
+
+    public void setUnauthorizedOverdraft(boolean isUnauthorizedOverdraft) {
+        this.isUnauthorizedOverdraft = isUnauthorizedOverdraft;
+    }
+
+    public int getStep() {
+        return step;
+    }
+
+    public String getAction() {
+        return action;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public String getNameOrig() {
+        return nameOrig;
+    }
+
+    public double getOldBalanceOrig() {
+        return oldBalanceOrig;
+    }
+
+    public double getNewBalanceOrig() {
+        return newBalanceOrig;
+    }
+
+    public String getNameDest() {
+        return nameDest;
+    }
+
+    public double getOldBalanceDest() {
+        return oldBalanceDest;
+    }
+
+    public double getNewBalanceDest() {
+        return newBalanceDest;
     }
 }
