@@ -1,5 +1,7 @@
 package org.paysim.paysim.actors;
 
+import java.util.ArrayList;
+
 public class Merchant extends SuperActor {
     private static final String MERCHANT_IDENTIFIER = "M";
 

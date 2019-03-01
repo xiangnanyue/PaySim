@@ -1,6 +1,7 @@
 package org.paysim.paysim.base;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Date;
@@ -90,7 +91,9 @@ public class Transaction implements Serializable {
         // TODO: use standard format
         properties.add(transaction_channel);
         properties.add(Output.formatBoolean(isFinished));
-        properties.add(pay_time.toString());
+
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        properties.add(format.format(pay_time));
 
         properties.add(orgAccountNum);
         properties.add(desAccountNum);

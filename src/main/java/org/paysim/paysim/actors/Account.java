@@ -6,7 +6,7 @@ import org.apache.tinkerpop.shaded.jackson.databind.JsonSerializer;
 import java.util.Random;
 
 public class Account {
-
+    protected String accountOwnerId;
     protected String accountNumber;
     protected Boolean isPublic = false;
     protected String bankName;
@@ -48,5 +48,12 @@ public class Account {
         char checkCode = luhmSum % 10 == 0 ? '0'
                 : (char) (10 - luhmSum % 10 + '0');
         return bardNo + checkCode;
+    }
+
+    @Override
+    public String toString(){
+        //card_number,card_type,is_public,bank_name
+        String[] s = {this.accountNumber, this.cardType, this.isPublic.toString(), this.bankName};
+        return String.join(",", s) ;
     }
 }

@@ -8,6 +8,8 @@ import org.paysim.paysim.PaySim;
 import org.paysim.paysim.actors.Client;
 import org.paysim.paysim.utils.RandomCollection;
 
+import java.util.UUID;
+
 public class DrugConsumer extends Client {
     private DrugDealer dealer;
     private RandomCollection<Double> probAmountProfile;
@@ -24,18 +26,18 @@ public class DrugConsumer extends Client {
     public void step(SimState state) {
         PaySim paySim = (PaySim) state;
         int step = (int) paySim.schedule.getSteps();
-
+        String equip_id = UUID.randomUUID().toString();
         super.step(state);
 
         if (wantsToBuyDrugs(paySim.random)) {
             double amount = pickAmount();
 
-            handleTransferDealer(paySim, step, amount);
+            handleTransferDealer(paySim, step, amount, equip_id);
         }
     }
 
-    private void handleTransferDealer(PaySim paySim, int step, double amount) {
-        boolean success = handleTransfer(paySim, step, amount, dealer);
+    private void handleTransferDealer(PaySim paySim, int step, double amount, String equip_id) {
+        boolean success = handleTransfer(paySim, step, amount, equip_id, dealer);
 
         if (success) {
             dealer.addMoneyFromDrug(amount);

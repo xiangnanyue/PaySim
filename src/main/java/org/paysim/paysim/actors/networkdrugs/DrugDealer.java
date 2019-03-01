@@ -5,6 +5,8 @@ import sim.engine.SimState;
 import org.paysim.paysim.PaySim;
 import org.paysim.paysim.actors.Client;
 
+import java.util.UUID;
+
 public class DrugDealer extends Client {
     private double thresholdForCashOut;
     private double drugMoneyInAccount;
@@ -19,12 +21,12 @@ public class DrugDealer extends Client {
     public void step(SimState state) {
         PaySim paySim = (PaySim) state;
         int step = (int) paySim.schedule.getSteps();
-
+        String equip_id = UUID.randomUUID().toString();
         super.step(state);
 
         if (wantsToCashOutProfit()) {
             double amount = pickAmountCashOutProfit();
-            super.handleCashOut(paySim, step, amount);
+            super.handleCashOut(paySim, step, amount, equip_id);
             drugMoneyInAccount -= amount;
         }
     }

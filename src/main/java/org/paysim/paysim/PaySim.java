@@ -5,14 +5,11 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import org.paysim.paysim.actors.*;
 import sim.engine.SimState;
 
 import org.paysim.paysim.parameters.*;
 
-import org.paysim.paysim.actors.Bank;
-import org.paysim.paysim.actors.Client;
-import org.paysim.paysim.actors.Fraudster;
-import org.paysim.paysim.actors.Merchant;
 import org.paysim.paysim.actors.networkdrugs.NetworkDrug;
 
 import org.paysim.paysim.base.Transaction;
@@ -23,7 +20,7 @@ import org.paysim.paysim.output.Output;
 
 public class PaySim extends SimState {
     public static final double PAYSIM_VERSION = 2.0;
-    private static final String[] DEFAULT_ARGS = new String[]{"", "-file", "PaySim.properties", "5"};
+    private static final String[] DEFAULT_ARGS = new String[]{"", "-file", "PaySim.properties", "1"}; // default once
 
     public final String simulationName;
     private int totalTransactionsMade = 0;
@@ -32,13 +29,34 @@ public class PaySim extends SimState {
     private ArrayList<Client> clients = new ArrayList<>();
     private ArrayList<Merchant> merchants = new ArrayList<>();
     private ArrayList<Fraudster> fraudsters = new ArrayList<>();
+    private ArrayList<Pair<Mule, Fraudster>> muleClientsAssignment = new ArrayList<>();
     private ArrayList<Bank> banks = new ArrayList<>();
+    private ArrayList<Pair<Account, String>> accountsAssignment = new ArrayList<>();  //In order to output an account table
+    private ArrayList<Pair<String, String>> equipmentsAssignment = new ArrayList<>();
+    private ArrayList<Pair<String, String>> ipsAssignment = new ArrayList<>();
 
     private ArrayList<Transaction> transactions = new ArrayList<>();
     private int currentStep;
 
     private Map<ClientActionProfile, Integer> countProfileAssignment = new HashMap<>();
 
+    public class Pair<T, S> {
+        T object;
+        S objectOwner;
+
+        Pair(T object, S objectOwner) {
+            this.object = object;
+            this.objectOwner = objectOwner;
+        }
+
+        public T getObject() { return this.object; }
+        public S getObjectOwner() {return this.objectOwner;}
+
+        @Override
+        public String toString() {
+            return objectOwner.toString()+","+object.toString();
+        }
+    }
 
     public static void main(String[] args) {
         System.out.println("PAYSIM: Financial Simulator v" + PAYSIM_VERSION);
@@ -117,6 +135,13 @@ public class PaySim extends SimState {
     private void initActors() {
         System.out.println("Init - Seed " + seed());
 
+        //Add the banks
+        System.out.println("NbBanks: " + Parameters.nbBanks);
+        for (int i = 0; i < Parameters.nbBanks; i++) {
+            Bank b = new Bank(generateId());
+            banks.add(b);
+        }
+
         //Add the merchants
         System.out.println("NbMerchants: " + (int) (Parameters.nbMerchants * Parameters.multiplier));
         for (int i = 0; i < Parameters.nbMerchants * Parameters.multiplier; i++) {
@@ -130,13 +155,11 @@ public class PaySim extends SimState {
             Fraudster f = new Fraudster(generateId());
             fraudsters.add(f);
             schedule.scheduleRepeating(f);
-        }
-
-        //Add the banks
-        System.out.println("NbBanks: " + Parameters.nbBanks);
-        for (int i = 0; i < Parameters.nbBanks; i++) {
-            Bank b = new Bank(generateId());
-            banks.add(b);
+            /*
+            for (Account acc : f.getAccounts()){
+                accountsAssignment.add(new Pair(acc, f.getName()));
+            }
+            */
         }
 
         //Add the clients
@@ -169,6 +192,32 @@ public class PaySim extends SimState {
     }
 
     public void finish() {
+
+        // add merchants accountInfo to accounts Assignment
+        for (Merchant m: merchants){
+            for (Account acc : m.getAccounts()){
+                acc.setBank(banks.get(random.nextInt(banks.size())));  // set a bank for merchant account
+                accountsAssignment.add(new Pair(acc, m.getName()));
+            }
+        }
+
+        // when all processes have finished, add accountsInfo to accountsAssignment
+        for (Client c : clients) {
+            for (Account acc : c.getAccounts()){
+                accountsAssignment.add(new Pair(acc, c.getName()));
+            }
+            for (String equip : c.getEquipIds()){
+                equipmentsAssignment.add(new Pair(equip, c.getName()));
+            }
+            for (String ip : c.getIPs()){
+                ipsAssignment.add(new Pair(ip, c.getName()));
+            }
+        }
+
+        Output.writeIPs(ipsAssignment);
+        Output.writeEquipments(equipmentsAssignment);
+        Output.writeAccounts(accountsAssignment);
+        Output.writeMuleClients(muleClientsAssignment);
         Output.writeFraudsters(fraudsters);
         Output.writeClientsProfiles(countProfileAssignment, (int) (Parameters.nbClients * Parameters.multiplier));
         Output.writeSummarySimulation(this);
@@ -213,6 +262,7 @@ public class PaySim extends SimState {
         return banks.get(random.nextInt(banks.size()));
     }
 
+    // 找到不冲突的下一个client
     public Client pickRandomClient(String nameOrig) {
         Client clientDest = null;
 
@@ -242,6 +292,10 @@ public class PaySim extends SimState {
 
     public void addClient(Client c) {
         clients.add(c);
+    }
+
+    public void addMuleClient(Mule m, Fraudster f) {
+        muleClientsAssignment.add(new PaySim.Pair(m, f));
     }
 
     public int getStepTargetCount() {

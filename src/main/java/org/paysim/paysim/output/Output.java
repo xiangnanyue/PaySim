@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import org.paysim.paysim.PaySim;
+import org.paysim.paysim.actors.Account;
+import org.paysim.paysim.actors.Mule;
 import org.paysim.paysim.base.StepActionProfile;
 import org.paysim.paysim.base.ClientActionProfile;
 import org.paysim.paysim.base.Transaction;
@@ -20,7 +22,8 @@ public class Output {
     public static final int PRECISION_OUTPUT = 2;
     public static final String OUTPUT_SEPARATOR = ",", EOL_CHAR = System.lineSeparator();
     private static String filenameGlobalSummary, filenameParameters, filenameSummary, filenameRawLog,
-            filenameStepAggregate, filenameClientProfiles, filenameFraudsters;
+            filenameStepAggregate, filenameClientProfiles, filenameFraudsters, filenameAccountsInfo,
+            filenameEquipmentInfo, filenameIPsInfo, filenameMulesInfo;
 
     public static void incrementalWriteRawLog(int step, ArrayList<Transaction> transactions) {
         String rawLogHeader = "action_type,transaction_amt,user_debit_id,"+
@@ -65,6 +68,69 @@ public class Output {
 
     }
 
+    public static void writeIPs(ArrayList<PaySim.Pair<String, String>> ipsAssignments) {
+        String header = "owner_id,ip";
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(filenameIPsInfo));
+            writer.write(header);
+            writer.newLine();
+            for (PaySim.Pair<String, String> f : ipsAssignments) {
+                writer.write(f.toString());
+                writer.newLine();
+            }
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void writeEquipments(ArrayList<PaySim.Pair<String, String>> equipmentAssignments) {
+        String header = "owner_id,equip_id";
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(filenameEquipmentInfo));
+            writer.write(header);
+            writer.newLine();
+            for (PaySim.Pair<String, String> f : equipmentAssignments) {
+                writer.write(f.toString());
+                writer.newLine();
+            }
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void writeAccounts(ArrayList<PaySim.Pair<Account, String>> accountAssignments) {
+        String header = "owner_id,card_number,card_type,is_public,bank_name";
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(filenameAccountsInfo));
+            writer.write(header);
+            writer.newLine();
+            for (PaySim.Pair<Account, String> f : accountAssignments) {
+                writer.write(f.toString());
+                writer.newLine();
+            }
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void writeMuleClients(ArrayList<PaySim.Pair<Mule, Fraudster>> muleClientsAssignment) {
+        String fraudsterHeader = "muleName,creatorName";
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(filenameMulesInfo));
+            writer.write(fraudsterHeader);
+            writer.newLine();
+            for ( PaySim.Pair<Mule, Fraudster> f : muleClientsAssignment ) {
+                writer.write(f.getObject().toString()+","+f.getObjectOwner().getName());
+                writer.newLine();
+            }
+            writer.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void writeFraudsters(ArrayList<Fraudster> fraudsters) {
         String fraudsterHeader = "name,nbVictims,profit";
@@ -198,5 +264,9 @@ public class Output {
         filenameStepAggregate = outputBaseString + "_aggregatedTransactions.csv";
         filenameClientProfiles = outputBaseString + "_clientsProfiles.csv";
         filenameFraudsters = outputBaseString + "_fraudsters.csv";
+        filenameAccountsInfo = outputBaseString + "_accountsInfo.csv";
+        filenameEquipmentInfo = outputBaseString + "_equipmentsInfo.csv";
+        filenameIPsInfo = outputBaseString + "_ipsInfo.csv";
+        filenameMulesInfo = outputBaseString + "_muleFraudster.csv";
     }
 }

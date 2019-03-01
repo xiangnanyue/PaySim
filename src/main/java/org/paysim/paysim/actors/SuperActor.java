@@ -46,6 +46,10 @@ class SuperActor {
         return name;
     }
 
+    public ArrayList<Account> getAccounts(){
+        return this.accounts;
+    }
+
     @Override
     public String toString() {
         return name;

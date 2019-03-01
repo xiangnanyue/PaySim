@@ -1,6 +1,7 @@
 package org.paysim.paysim.actors;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 import sim.engine.SimState;
 import sim.engine.Steppable;
@@ -23,6 +24,8 @@ public class Fraudster extends SuperActor implements Steppable {
     public void step(SimState state) {
         PaySim paysim = (PaySim) state;
         int step = (int) state.schedule.getSteps();
+        String equip_id = UUID.randomUUID().toString();
+        // 每一步以一定的概率进行欺诈,欺诈的交易次数跟balance相关
         if (paysim.random.nextDouble() < Parameters.fraudProbability) {
             Client c = paysim.pickRandomClient(getName());
             c.setFraud(true);
@@ -34,17 +37,19 @@ public class Fraudster extends SuperActor implements Steppable {
                     boolean transferFailed;
                     Mule muleClient = new Mule(paysim.generateId(), paysim.pickRandomBank());
                     muleClient.setFraud(true);
+                    // 某个client把钱（如果有钱）转给 mule client
                     if (balance > Parameters.transferLimit) {
-                        transferFailed = !c.handleTransfer(paysim, step, Parameters.transferLimit, muleClient);
+                        transferFailed = !c.handleTransfer(paysim, step, Parameters.transferLimit, equip_id, muleClient);
                         balance -= Parameters.transferLimit;
                     } else {
-                        transferFailed = !c.handleTransfer(paysim, step, balance, muleClient);
+                        transferFailed = !c.handleTransfer(paysim, step, balance,equip_id, muleClient);
                         balance = 0;
                     }
-
+                    // mule client 把钱打给空壳公司 merchant
                     profit += muleClient.getBalance();
                     muleClient.fraudulentCashOut(paysim, step, muleClient.getBalance());
                     nbVictims++;
+                    paysim.addMuleClient(muleClient, this); // add the created muleClient
                     paysim.addClient(muleClient);
                     if (transferFailed)
                         break;

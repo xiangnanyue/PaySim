@@ -19,9 +19,10 @@ public class Mule extends Client {
         this.overdraftLimit = 0;
         this.city = new String[]{"Shanghai", "Washington", "Paris"}[new Random().nextInt(3)];
         this.country = new String[]{"China", "America", "France"}[new Random().nextInt(3)];
-        this.ips = ClientProfile.generateIPs(100);
-        this.ip = this.ips[new Random().nextInt(100)];
+        this.ips = ClientProfile.generateIPs(2);
+        this.ip = this.ips[new Random().nextInt(this.ips.length)];
         this.equip_id = UUID.randomUUID().toString();
+        this.equip_ids = new String[] {equip_id};
     }
 
     void fraudulentCashOut(PaySim paysim, int step, double amount) {

@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import ec.util.MersenneTwisterFast;
 
 import org.paysim.paysim.parameters.ActionTypes;
+import org.w3c.dom.ranges.Range;
 
 public class ClientProfile {
     public static final Map<String, String> city2Country;
@@ -21,6 +22,7 @@ public class ClientProfile {
         city2Country = Collections.unmodifiableMap(tmp);
     }
     public static String[] cities = city2Country.keySet().toArray(new String[city2Country.size()]);
+    public static String[] equipments = {"Phone", "Mac", "Ipad", "Iphone", "SchoolLapTop", "WorkComputer"};
 
     private Map<String, ClientActionProfile> actionProfileMap;
     private Map<String, Double> actionProbability = new HashMap<>();
@@ -36,6 +38,15 @@ public class ClientProfile {
             clientTargetCount += targetCountAction;
         }
         computeActionProbability();
+    }
+
+    public static String[] createFingerprints() {
+        int numberOfEquips = new Random().nextInt(equipments.length)+1;
+        ArrayList<String> fingerPrints = new ArrayList();
+        for (int i=0; i<numberOfEquips; i++){
+            fingerPrints.add(UUID.randomUUID().toString());
+        }
+        return fingerPrints.toArray(new String[0]);
     }
 
     public static String[] generateIPs(int n) {
